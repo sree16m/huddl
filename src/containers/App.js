@@ -10,6 +10,9 @@ class App extends Component {
     this.state = {
       posts: [],
       users: [],
+      postData: {},
+      userData: {},
+      postComments: [],
       showPostView: false,
       showUserView: false,
       showPostList: true
@@ -21,21 +24,36 @@ class App extends Component {
   }
 
   showPost(event) {
-    console.log("showPost" + event.currentTarget.getAttribute("postid"));
-    this.setState({
-      showPostView: true,
-      showUserView: false,
-      showPostList: false
-    });
+    const postId = parseInt(event.currentTarget.getAttribute("postid"));
+    const postData = this.state.posts.find(item => item.id === postId);
+    const userData = this.state.users.find(
+      item => item.id === parseInt(postData.userId)
+    );
+    const url = "https://jsonplaceholder.typicode.com/comments/" + postId;
+
+    fetch(url)
+      .then(response => response.json())
+      .then(data => {
+        this.setState({
+          showPostView: true,
+          showUserView: false,
+          showPostList: false,
+          postComments: data,
+          postData: { postTitle: postData.title, userName: userData.name }
+        });
+      })
+      .catch("Oops got some error while fetching comments!!!");
   }
 
   showUser(event) {
     event.stopPropagation();
-    console.log("showUser" + event.currentTarget.getAttribute("userid"));
+    const userId = parseInt(event.currentTarget.getAttribute("userid"));
+    const userData = this.state.users.find(item => item.id === userId);
     this.setState({
       showPostView: false,
       showUserView: true,
-      showPostList: false
+      showPostList: false,
+      userData: userData
     });
   }
 
@@ -49,6 +67,10 @@ class App extends Component {
 
   render() {
     const { posts, users } = this.state;
+    if (posts.length === 0 && users.length === 0) {
+      return <div>Loading...</div>;
+    }
+
     return (
       <div className="tc">
         <h1 className="f1">My Blog</h1>
@@ -61,23 +83,38 @@ class App extends Component {
           />
         )}
         {this.state.showPostView && (
-          <PostView showPostList={this.showPostList} />
+          <PostView
+            showPostList={this.showPostList}
+            postData={this.state.postData}
+            postComments={this.state.postComments}
+          />
         )}
         {this.state.showUserView && (
-          <UserView showPostList={this.showPostList} />
+          <UserView
+            showPostList={this.showPostList}
+            userData={this.state.userData}
+          />
         )}
       </div>
     );
   }
 
   componentDidMount() {
-    fetch("https://jsonplaceholder.typicode.com/users")
-      .then(response => response.json())
-      .then(users => this.setState({ users: users }));
+    const urls = [
+      "https://jsonplaceholder.typicode.com/users",
+      "https://jsonplaceholder.typicode.com/posts"
+    ];
 
-    fetch("https://jsonplaceholder.typicode.com/posts")
-      .then(response => response.json())
-      .then(posts => this.setState({ posts: posts }));
+    Promise.all(
+      urls.map(url =>
+        fetch(url)
+          .then(response => response.json())
+          .catch("Oops got some error")
+      )
+    ).then(data => {
+      let [users, posts] = data;
+      this.setState({ posts: posts, users: users });
+    });
   }
 }
 
