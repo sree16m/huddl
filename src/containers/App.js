@@ -15,12 +15,16 @@ class App extends Component {
       postComments: [],
       showPostView: false,
       showUserView: false,
-      showPostList: true
+      showPostList: true,
+      searchSuggestions: [],
+      inputText: ""
     };
 
     this.showPost = this.showPost.bind(this);
     this.showUser = this.showUser.bind(this);
     this.showPostList = this.showPostList.bind(this);
+    this.searchChange = this.searchChange.bind(this);
+    this.suggestionSelected = this.suggestionSelected.bind(this);
   }
 
   showPost(event) {
@@ -43,6 +47,29 @@ class App extends Component {
         });
       })
       .catch("Oops got some error while fetching comments!!!");
+  }
+
+  searchChange(event) {
+    let value = event.target.value;
+    let suggestions = [];
+    let validStrMatch = /^[A-Za-z]+$/;
+    if (value.length > 0 && value.match(validStrMatch)) {
+      let regex = new RegExp(`^${value}`, "i");
+      suggestions = this.state.users.filter(item => regex.test(item.username));
+    }
+    this.setState({ searchSuggestions: suggestions, inputText: value });
+  }
+
+  suggestionSelected(value) {
+    const userData = this.state.users.find(item => item.username === value);
+    this.setState({
+      searchSuggestions: [],
+      inputText: value,
+      showPostView: false,
+      showUserView: true,
+      showPostList: false,
+      userData: userData
+    });
   }
 
   showUser(event) {
@@ -93,6 +120,10 @@ class App extends Component {
           <UserView
             showPostList={this.showPostList}
             userData={this.state.userData}
+            searchChange={this.searchChange}
+            suggestions={this.state.searchSuggestions}
+            inputText={this.state.inputText}
+            suggestionSelected={this.suggestionSelected}
           />
         )}
       </div>
