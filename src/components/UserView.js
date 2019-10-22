@@ -1,8 +1,15 @@
 import React from "react";
+import Search from "./SearchBox";
 
 const UserView = props => {
   return (
     <div>
+      <Search
+        searchChange={props.searchChange}
+        suggestions={props.suggestions}
+        inputText={props.inputText}
+        suggestionSelected={props.suggestionSelected}
+      />
       <p>User Name : {props.userData.username}</p>
       <p>Full Name : {props.userData.name}</p>
       <p>Email : {props.userData.email}</p>
